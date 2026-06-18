@@ -4,33 +4,31 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "stats")
+@Table(name = "navigation_links")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Stat {
+public class NavigationLink {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
+    private String section;
+
+    @Column(nullable = false)
     private String label;
 
     @Column(nullable = false)
-    private String value;
-
-    @Column
-    private String suffix;
+    private String url;
 
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
-    @Column
-    private String context;
-
-    @Column
-    private String sub;
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 }

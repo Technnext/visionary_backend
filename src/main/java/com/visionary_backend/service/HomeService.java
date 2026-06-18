@@ -38,6 +38,10 @@ public class HomeService {
                 .toList();
     }
 
+    public List<Stat> getStatsByContext(String context) {
+        return statRepository.findByContextOrderByDisplayOrderAsc(context);
+    }
+
     public List<Client> getClients() {
         return clientRepository.findAll()
                 .stream()

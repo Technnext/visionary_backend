@@ -24,6 +24,10 @@ public class DataInitializer implements CommandLineRunner {
     private final OfficeLocationRepository officeLocationRepository;
     private final LeaderRepository leaderRepository;
     private final MortgageServiceRepository mortgageServiceRepository;
+    private final CompanySettingsRepository companySettingsRepository;
+    private final NavigationLinkRepository navigationLinkRepository;
+    private final CtaSectionRepository ctaSectionRepository;
+    private final HeroSectionRepository heroSectionRepository;
 
     public DataInitializer(StatRepository statRepository,
                            ClientRepository clientRepository,
@@ -35,7 +39,11 @@ public class DataInitializer implements CommandLineRunner {
                            JobRepository jobRepository,
                            OfficeLocationRepository officeLocationRepository,
                            LeaderRepository leaderRepository,
-                           MortgageServiceRepository mortgageServiceRepository) {
+                           MortgageServiceRepository mortgageServiceRepository,
+                           CompanySettingsRepository companySettingsRepository,
+                           NavigationLinkRepository navigationLinkRepository,
+                           CtaSectionRepository ctaSectionRepository,
+                           HeroSectionRepository heroSectionRepository) {
         this.statRepository = statRepository;
         this.clientRepository = clientRepository;
         this.testimonialRepository = testimonialRepository;
@@ -47,6 +55,10 @@ public class DataInitializer implements CommandLineRunner {
         this.officeLocationRepository = officeLocationRepository;
         this.leaderRepository = leaderRepository;
         this.mortgageServiceRepository = mortgageServiceRepository;
+        this.companySettingsRepository = companySettingsRepository;
+        this.navigationLinkRepository = navigationLinkRepository;
+        this.ctaSectionRepository = ctaSectionRepository;
+        this.heroSectionRepository = heroSectionRepository;
     }
 
     @Override
@@ -62,17 +74,93 @@ public class DataInitializer implements CommandLineRunner {
         seedOfficeLocations();
         seedLeaders();
         seedMortgageServices();
+        seedCompanySettings();
+        seedNavigationLinks();
+        seedCtaSections();
+        seedHeroSections();
     }
 
     // ─── Stats ────────────────────────────────────────────────────────────────
 
     private void seedStats() {
-        if (statRepository.count() > 0) return;
+        statRepository.deleteAll();
+
+        // ── context: home (home page stats strip) ────────────────────────────
         statRepository.saveAll(List.of(
-                Stat.builder().label("Clients Served").value("200").suffix("+").displayOrder(1).build(),
-                Stat.builder().label("Employees").value("11").suffix("K+").displayOrder(2).build(),
-                Stat.builder().label("Countries").value("9").suffix("+").displayOrder(3).build(),
-                Stat.builder().label("Years of Experience").value("25").suffix("+").displayOrder(4).build()
+                Stat.builder().label("Clients Served").value("20").suffix("+").sub(null).context("home").displayOrder(1).build(),
+                Stat.builder().label("Employees").value("11").suffix("K+").sub(null).context("home").displayOrder(2).build(),
+                Stat.builder().label("Years of Experience").value("4").suffix("+").sub(null).context("home").displayOrder(3).build()
+        ));
+
+        // ── context: global (trust strip on service/mortgage/industry detail pages) ─
+        statRepository.saveAll(List.of(
+                Stat.builder().label("Global Clients").value("20+").suffix(null).sub("Across industries").context("global").displayOrder(1).build(),
+                Stat.builder().label("Client Retention").value("99%").suffix(null).sub("Year-on-year").context("global").displayOrder(2).build(),
+                Stat.builder().label("Global Delivery").value("24/7").suffix(null).sub("Follow-the-sun model").context("global").displayOrder(3).build(),
+                Stat.builder().label("Years of Expertise").value("4+").suffix(null).sub("Enterprise-grade delivery").context("global").displayOrder(4).build()
+        ));
+
+        // ── context: about_overview (About page overview panel) ──────────────
+        statRepository.saveAll(List.of(
+                Stat.builder().label("Years of enterprise expertise").value("4").suffix("+").sub(null).context("about_overview").displayOrder(1).build(),
+                Stat.builder().label("Global enterprise clients").value("20").suffix("+").sub(null).context("about_overview").displayOrder(2).build(),
+                Stat.builder().label("Professionals worldwide").value("11").suffix("K+").sub(null).context("about_overview").displayOrder(3).build()
+        ));
+
+        // ── context: about_global (About page global presence panel) ─────────
+        statRepository.saveAll(List.of(
+                Stat.builder().label("Office Locations").value("3").suffix(null).sub(null).context("about_global").displayOrder(1).build(),
+                Stat.builder().label("Delivery centres").value("20").suffix("+").sub(null).context("about_global").displayOrder(2).build(),
+                Stat.builder().label("Nationalities").value("10").suffix("+").sub(null).context("about_global").displayOrder(3).build(),
+                Stat.builder().label("Global coverage").value("24/7").suffix(null).sub(null).context("about_global").displayOrder(4).build()
+        ));
+
+        // ── context: careers (Careers page stats strip) ──────────────────────
+        statRepository.saveAll(List.of(
+                Stat.builder().label("Employees globally").value("11").suffix("K+").sub(null).context("careers").displayOrder(1).build(),
+                Stat.builder().label("Office locations").value("3").suffix("+").sub(null).context("careers").displayOrder(2).build(),
+                Stat.builder().label("Nationalities represented").value("10").suffix("+").sub(null).context("careers").displayOrder(3).build(),
+                Stat.builder().label("Internal promotion rate").value("68").suffix("%").sub(null).context("careers").displayOrder(4).build()
+        ));
+
+        // ── context: industry_bfs (Banking & Financial Services highlights) ───
+        statRepository.saveAll(List.of(
+                Stat.builder().label("Banking & insurance clients").value("5+").suffix(null).sub(null).context("industry_bfs").displayOrder(1).build(),
+                Stat.builder().label("Regulatory compliance rate").value("99%").suffix(null).sub(null).context("industry_bfs").displayOrder(2).build(),
+                Stat.builder().label("Reduction in onboarding drop-off").value("40%").suffix(null).sub(null).context("industry_bfs").displayOrder(3).build(),
+                Stat.builder().label("Fraud operations coverage").value("24/7").suffix(null).sub(null).context("industry_bfs").displayOrder(4).build()
+        ));
+
+        // ── context: industry_healthcare (Healthcare highlights) ─────────────
+        statRepository.saveAll(List.of(
+                Stat.builder().label("Healthcare clients across payer & provider").value("4+").suffix(null).sub(null).context("industry_healthcare").displayOrder(1).build(),
+                Stat.builder().label("Claims accuracy rate").value("98%").suffix(null).sub(null).context("industry_healthcare").displayOrder(2).build(),
+                Stat.builder().label("Reduction in prior auth turnaround").value("35%").suffix(null).sub(null).context("industry_healthcare").displayOrder(3).build(),
+                Stat.builder().label("Fully compliant operations").value("HIPAA").suffix(null).sub(null).context("industry_healthcare").displayOrder(4).build()
+        ));
+
+        // ── context: industry_telecom (Telecommunications highlights) ────────
+        statRepository.saveAll(List.of(
+                Stat.builder().label("Telecom operators supported").value("3+").suffix(null).sub(null).context("industry_telecom").displayOrder(1).build(),
+                Stat.builder().label("First-call resolution improvement").value("60%").suffix(null).sub(null).context("industry_telecom").displayOrder(2).build(),
+                Stat.builder().label("Reduction in churn through retention").value("45%").suffix(null).sub(null).context("industry_telecom").displayOrder(3).build(),
+                Stat.builder().label("Ready delivery frameworks").value("5G").suffix(null).sub(null).context("industry_telecom").displayOrder(4).build()
+        ));
+
+        // ── context: industry_retail (Retail & E-commerce highlights) ────────
+        statRepository.saveAll(List.of(
+                Stat.builder().label("Retail & e-commerce clients").value("5+").suffix(null).sub(null).context("industry_retail").displayOrder(1).build(),
+                Stat.builder().label("Order processing accuracy").value("99.5%").suffix(null).sub(null).context("industry_retail").displayOrder(2).build(),
+                Stat.builder().label("Peak season scale-up capacity").value("3\u00d7").suffix(null).sub(null).context("industry_retail").displayOrder(3).build(),
+                Stat.builder().label("Average seller onboarding time").value("48h").suffix(null).sub(null).context("industry_retail").displayOrder(4).build()
+        ));
+
+        // ── context: industry_media (Media & Entertainment highlights) ────────
+        statRepository.saveAll(List.of(
+                Stat.builder().label("Languages moderated").value("10+").suffix(null).sub(null).context("industry_media").displayOrder(1).build(),
+                Stat.builder().label("Content review accuracy").value("99.5%").suffix(null).sub(null).context("industry_media").displayOrder(2).build(),
+                Stat.builder().label("Streaming platform clients").value("3+").suffix(null).sub(null).context("industry_media").displayOrder(3).build(),
+                Stat.builder().label("Escalation response time").value("<2h").suffix(null).sub(null).context("industry_media").displayOrder(4).build()
         ));
     }
 
@@ -135,10 +223,8 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedServices() {
         long count = serviceRepository.count();
-        if (count >= 28) return;
-        if (count > 0) {
-            serviceRepository.deleteAll();
-        }
+        if (count == 27) return;
+        serviceRepository.deleteAll();
 
         // ═══════════════════════════════════════════════════════════════════
         // CATEGORY: Application Services  (1–7)
@@ -159,21 +245,7 @@ public class DataInitializer implements CommandLineRunner {
                 ServiceBenefit.builder().title("Managed Application Support").description("SLA-governed run and maintain services keeping critical applications available, secure, and continuously improved.").service(s01).build()
         ));
 
-        // ── 2. Blockchain
-        ServiceEntity s02 = ServiceEntity.builder()
-                .slug("blockchain").title("Blockchain")
-                .description("We help enterprises harness distributed ledger technology to create tamper-proof records, automate complex multi-party agreements, and build trusted ecosystems across supply chains, financial markets, and regulated industries. Our blockchain practice covers strategy, platform selection, smart contract development, and production operations.")
-                .iconUrl("/images/services/blockchain.svg").bannerUrl("/images/services/blockchain-banner.jpg")
-                .category("Application Services").displayOrder(2).build();
-        s02.getBenefits().addAll(List.of(
-                ServiceBenefit.builder().title("Smart Contract Development").description("Audited, gas-optimised smart contracts encoding business rules that execute automatically without intermediaries.").service(s02).build(),
-                ServiceBenefit.builder().title("Permissioned Ledger Design").description("Enterprise-grade Hyperledger Fabric and R3 Corda implementations tailored for regulated industries.").service(s02).build(),
-                ServiceBenefit.builder().title("Tokenisation Solutions").description("Digital asset and token frameworks enabling new revenue models, loyalty programmes, and asset liquidity.").service(s02).build(),
-                ServiceBenefit.builder().title("Supply Chain Traceability").description("Immutable provenance records across multi-tier supply networks delivering transparency from source to consumer.").service(s02).build(),
-                ServiceBenefit.builder().title("Interoperability Engineering").description("Cross-chain bridges and integration layers enabling seamless data exchange between disparate ledger networks.").service(s02).build()
-        ));
-
-        // ── 3. NextOps – Business Process Services
+        // ── 2. NextOps – Business Process Services
         ServiceEntity s03 = ServiceEntity.builder()
                 .slug("nextops-business-process-services").title("NextOps – Business Process Services")
                 .description("NextOps is our next-generation business process services model that combines intelligent automation, AI-assisted decisioning, and analytics-driven continuous improvement to deliver operations that are faster, cheaper, and more accurate than traditional BPO. We reimagine core enterprise processes rather than simply lift-and-shift them offshore.")
@@ -516,7 +588,7 @@ public class DataInitializer implements CommandLineRunner {
         ServiceEntity s27 = ServiceEntity.builder()
                 .slug("product-line-visionary-inspire-modernize").title("Product Line – Visionary Inspire Modernize")
                 .description("Visionary Inspire Modernize is our proprietary accelerator product line that combines AI-powered code analysis, automated refactoring tooling, and migration factory methodology to industrialise legacy application modernisation. Modernize cuts the cost and risk of large-scale modernisation programmes by automating the most labour-intensive discovery and transformation activities.")
-                .iconUrl("/images/services/modernize.svg").bannerUrl("/images/services/modernize-banner.jpg")
+                .iconUrl("/images/services/product-line-visionary-inspire-modernize.svg").bannerUrl("/images/services/product-line-visionary-inspire-modernize-banner.jpg")
                 .category("Cloud & Digital").displayOrder(27).build();
         s27.getBenefits().addAll(List.of(
                 ServiceBenefit.builder().title("AI-Powered Code Analysis").description("Automated scanning of legacy codebases producing dependency maps, complexity scores, and transformation recommendations.").service(s27).build(),
@@ -530,7 +602,7 @@ public class DataInitializer implements CommandLineRunner {
         ServiceEntity s28 = ServiceEntity.builder()
                 .slug("product-line-visionary-inspire-optimize").title("Product Line – Visionary Inspire Optimize")
                 .description("Visionary Inspire Optimize is our intelligent operations product line that applies AI, analytics, and automation to continuously optimise enterprise IT and business operations. Optimize embeds continuous intelligence into operational workflows — proactively detecting performance degradation, predicting failures, and automatically implementing improvements before they impact business outcomes.")
-                .iconUrl("/images/services/optimize.svg").bannerUrl("/images/services/optimize-banner.jpg")
+                .iconUrl("/images/services/product-line-visionary-inspire-optimize.svg").bannerUrl("/images/services/product-line-visionary-inspire-optimize-banner.jpg")
                 .category("Cloud & Digital").displayOrder(28).build();
         s28.getBenefits().addAll(List.of(
                 ServiceBenefit.builder().title("Predictive Operations").description("ML models trained on operational telemetry that predict failures and capacity constraints before they impact service.").service(s28).build(),
@@ -541,7 +613,7 @@ public class DataInitializer implements CommandLineRunner {
         ));
 
         serviceRepository.saveAll(List.of(
-                s01, s02, s03, s04, s05, s06, s07,
+                s01, s03, s04, s05, s06, s07,
                 s08, s09, s10,
                 s11, s12, s13, s14, s15,
                 s16, s17, s18, s19, s20, s21, s22,
@@ -792,37 +864,37 @@ public class DataInitializer implements CommandLineRunner {
         leaderRepository.saveAll(List.of(
                 Leader.builder()
                         .name("Rajesh Kumar").title("Chief Executive Officer")
-                        .bio("Rajesh Kumar brings over 25 years of global technology and services leadership to his role as CEO. Previously Group President at a Fortune 500 IT services firm, he has led large-scale digital transformation programmes for clients across financial services, healthcare, and telecommunications. Under his leadership, Visionary Inspire has expanded its hyperscaler partnerships, grown its AI and automation practice, and strengthened delivery operations across Asia Pacific, Europe, and the Americas. Rajesh holds an MBA from IIM Ahmedabad and a Bachelor of Engineering in Computer Science from IIT Bombay.")
+                        .bio("Rajesh Kumar brings over 4 years of technology and services leadership to his role as CEO. Previously a senior leader at a leading IT services firm, he has led digital transformation programmes for clients across financial services, healthcare, and telecommunications. Under his leadership, Visionary Inspire has expanded its hyperscaler partnerships, grown its AI and automation practice, and strengthened delivery operations across India. Rajesh holds an MBA from IIM Ahmedabad and a Bachelor of Engineering in Computer Science from IIT Bombay.")
                         .photoUrl("/images/leaders/rajesh-kumar.jpg")
                         .linkedinUrl("https://www.linkedin.com/in/rajesh-kumar")
                         .displayOrder(1).build(),
                 Leader.builder()
                         .name("Sarah Mitchell").title("Chief Technology Officer")
-                        .bio("Sarah Mitchell is a seasoned technology executive with more than 20 years of experience architecting enterprise platforms and leading engineering organisations at scale. Before joining Visionary Inspire, she served as VP of Engineering at a global cloud infrastructure company, where she oversaw a 3,000-strong engineering function and drove the transition to a cloud-native product portfolio. Sarah is a recognised voice in the AI and distributed systems community, holds patents in intelligent document processing, and serves on the advisory board of two UK university computer science departments. She holds an MEng in Software Engineering from the University of Cambridge.")
+                        .bio("Sarah Mitchell is a seasoned technology executive with experience architecting enterprise platforms and leading engineering organisations. Before joining Visionary Inspire, she served as VP of Engineering at a cloud infrastructure company, where she led the transition to a cloud-native product portfolio. Sarah is a recognised voice in the AI and distributed systems community, holds patents in intelligent document processing, and serves on the advisory board of two university computer science departments. She holds an MEng in Software Engineering from the University of Cambridge.")
                         .photoUrl("/images/leaders/sarah-mitchell.jpg")
                         .linkedinUrl("https://www.linkedin.com/in/sarah-mitchell-cto")
                         .displayOrder(2).build(),
                 Leader.builder()
                         .name("Michael Chen").title("Chief Operating Officer")
-                        .bio("Michael Chen oversees global delivery operations, service quality, and operational excellence across Visionary Inspire's delivery centres in India, the Philippines, the UK, and the United States. With a background spanning management consulting and large-scale BPO operations, Michael has led multi-geography transformation programmes that have delivered measurable improvements in cost efficiency, client satisfaction, and workforce capability. He previously held COO roles at two FTSE 100-listed outsourcing firms and is a certified Lean Six Sigma Master Black Belt. Michael holds an MBA from INSEAD and a BSc in Industrial Engineering from the University of Michigan.")
+                        .bio("Michael Chen oversees delivery operations, service quality, and operational excellence across Visionary Inspire's delivery centres in India. With a background spanning management consulting and BPO operations, Michael has led transformation programmes that have delivered measurable improvements in cost efficiency, client satisfaction, and workforce capability. He is a certified Lean Six Sigma Master Black Belt and holds an MBA from INSEAD and a BSc in Industrial Engineering from the University of Michigan.")
                         .photoUrl("/images/leaders/michael-chen.jpg")
                         .linkedinUrl("https://www.linkedin.com/in/michael-chen-coo")
                         .displayOrder(3).build(),
                 Leader.builder()
                         .name("Priya Sharma").title("VP, Cloud & Infrastructure")
-                        .bio("Priya Sharma leads Visionary Inspire's Cloud and Infrastructure practice, spanning AWS, Azure, GCP, and hybrid infrastructure services. She joined the company following a decade at a leading hyperscaler, where she built and scaled the enterprise cloud advisory function across South and Southeast Asia. Priya has personally led cloud migration and modernisation programmes for more than 40 enterprise clients and is a frequent speaker at AWS re:Invent and Microsoft Ignite. She is an AWS Certified Solutions Architect – Professional and holds a Master's in Computer Networks from the Indian Institute of Science, Bangalore.")
+                        .bio("Priya Sharma leads Visionary Inspire's Cloud and Infrastructure practice, spanning AWS, Azure, GCP, and hybrid infrastructure services. She joined the company following several years at a leading hyperscaler, where she built the enterprise cloud advisory function across South Asia. Priya has personally led cloud migration and modernisation programmes for multiple enterprise clients and is a frequent speaker at industry events. She is an AWS Certified Solutions Architect – Professional and holds a Master's in Computer Networks from the Indian Institute of Science, Bangalore.")
                         .photoUrl("/images/leaders/priya-sharma.jpg")
                         .linkedinUrl("https://www.linkedin.com/in/priya-sharma-cloud")
                         .displayOrder(4).build(),
                 Leader.builder()
                         .name("David Wilson").title("VP, AI & Automation")
-                        .bio("David Wilson heads the AI and Automation practice at Visionary Inspire, responsible for the company's machine learning, RPA, intelligent document processing, and agentic AI capabilities. A former research scientist turned enterprise practitioner, David has spent the last 15 years bridging academic advances in AI with commercial deployment at Fortune 500 scale. He founded the company's Responsible AI Centre of Excellence and has co-authored industry frameworks on AI governance adopted by clients in regulated financial services and healthcare verticals. David holds a PhD in Machine Learning from Carnegie Mellon University and is a published contributor to NeurIPS and ICML.")
+                        .bio("David Wilson heads the AI and Automation practice at Visionary Inspire, responsible for the company's machine learning, RPA, intelligent document processing, and agentic AI capabilities. A former research scientist turned enterprise practitioner, David has spent his career bridging academic advances in AI with commercial deployment. He founded the company's Responsible AI Centre of Excellence and has co-authored industry frameworks on AI governance adopted by clients in regulated financial services and healthcare verticals. David holds a PhD in Machine Learning from Carnegie Mellon University and is a published contributor to NeurIPS and ICML.")
                         .photoUrl("/images/leaders/david-wilson.jpg")
                         .linkedinUrl("https://www.linkedin.com/in/david-wilson-ai")
                         .displayOrder(5).build(),
                 Leader.builder()
                         .name("Anita Rao").title("VP, Digital Transformation")
-                        .bio("Anita Rao leads Digital Transformation at Visionary Inspire, helping enterprise clients reimagine their customer journeys, modernise legacy platforms, and build the organisational capabilities needed to sustain digital change. With over 18 years in digital strategy and product management, she has guided transformation programmes for leading banks, insurers, and retail groups across EMEA and North America. Anita is a recognised advocate for human-centred design and inclusive digital product development, and was named among the Top 50 Women in Tech by a leading industry publication in 2023. She holds an MBA from London Business School and a BA in Economics from St Stephen's College, Delhi.")
+                        .bio("Anita Rao leads Digital Transformation at Visionary Inspire, helping enterprise clients reimagine their customer journeys, modernise legacy platforms, and build the organisational capabilities needed to sustain digital change. With a background in digital strategy and product management, she has guided transformation programmes for leading banks, insurers, and retail groups. Anita is a recognised advocate for human-centred design and inclusive digital product development, and was named among the Top 50 Women in Tech by a leading industry publication in 2023. She holds an MBA from London Business School and a BA in Economics from St Stephen's College, Delhi.")
                         .photoUrl("/images/leaders/anita-rao.jpg")
                         .linkedinUrl("https://www.linkedin.com/in/anita-rao-digital")
                         .displayOrder(6).build()
@@ -863,21 +935,270 @@ public class DataInitializer implements CommandLineRunner {
         ));
     }
 
+    // ─── Company Settings ─────────────────────────────────────────────────────
+
+    private void seedCompanySettings() {
+        if (companySettingsRepository.count() > 0) return;
+        companySettingsRepository.save(
+                CompanySettings.builder()
+                        .companyName("Visionary Inspire")
+                        .phone("+91 82967 66781")
+                        .email("info@visionaryinspire.com")
+                        .headquartersAddress("18, Sy. No. 93/9, Noval MSR Park, Varthur Main Road, Munnekolala, Marathahalli, Bangalore \u2013 560037")
+                        .businessDays("Monday \u2013 Friday")
+                        .businessHours("9:00 AM \u2013 6:00 PM IST")
+                        .responseTime("Within 1 business day")
+                        .tagline("Transforming businesses through people, process & technology")
+                        .build()
+        );
+    }
+
     // ─── Office Locations ─────────────────────────────────────────────────────
 
     private void seedOfficeLocations() {
-        if (officeLocationRepository.count() > 0) return;
+        officeLocationRepository.deleteAll();
         officeLocationRepository.saveAll(List.of(
                 OfficeLocation.builder().city("Chennai").country("India")
                         .address("Level 8, Olympia Technology Park, Guindy, Chennai 600 032").phone("+91 44 4000 7000").email("india@visionaryinspire.com").build(),
+                OfficeLocation.builder().city("Hyderabad").country("India")
+                        .address("Hyderabad, India").phone("+91 40 4000 7000").email("hyderabad@visionaryinspire.com").build(),
                 OfficeLocation.builder().city("Bangalore").country("India")
-                        .address("3rd Floor, Embassy TechVillage, Outer Ring Road, Bangalore 560 103").phone("+91 80 6700 4000").email("bangalore@visionaryinspire.com").build(),
-                OfficeLocation.builder().city("New York").country("USA")
-                        .address("1185 Avenue of the Americas, 3rd Floor, New York, NY 10036").phone("+1 212 555 0180").email("usa@visionaryinspire.com").build(),
-                OfficeLocation.builder().city("London").country("UK")
-                        .address("25 Canada Square, Canary Wharf, London E14 5LQ").phone("+44 20 7946 0800").email("uk@visionaryinspire.com").build(),
-                OfficeLocation.builder().city("Manila").country("Philippines")
-                        .address("8th Floor, Cybergate Tower 3, EDSA, Mandaluyong City 1550").phone("+63 2 8888 4000").email("philippines@visionaryinspire.com").build()
+                        .address("3rd Floor, Embassy TechVillage, Outer Ring Road, Bangalore 560 103").phone("+91 80 6700 4000").email("bangalore@visionaryinspire.com").build()
+        ));
+    }
+
+    // ─── CTA Sections ─────────────────────────────────────────────────────────
+
+    // --- Hero Sections ---
+
+    private void seedHeroSections() {
+        if (heroSectionRepository.count() > 0) return;
+        heroSectionRepository.saveAll(List.of(
+
+                HeroSection.builder().pageKey("home").eyebrow("Transforming Global Enterprises").title("People, Process & Technology Working as One").subtitle("Visionary Inspire partners with leading enterprises to deliver customer experience, intelligent automation, and data-driven transformation that creates lasting competitive advantage.").primaryButtonText("Get in Touch").primaryButtonUrl("/contact").secondaryButtonText("Explore Services").secondaryButtonUrl("/services").displayOrder(1).build(),
+
+                HeroSection.builder().pageKey("about").eyebrow("About Us").title("{years}+ Years of Transforming Global Enterprises").subtitle("Visionary Inspire is a business process and technology services company, partnering with leading enterprises to deliver outcomes that matter.").displayOrder(2).build(),
+
+                HeroSection.builder().pageKey("careers").eyebrow("Careers").title("Build a Career That Makes a Global Impact").subtitle("Join a team of growing professionals working at the intersection of people, process, and technology to transform enterprises.").displayOrder(3).build(),
+
+                HeroSection.builder().pageKey("contact").eyebrow("Contact Us").title("Let\u2019s Start a Conversation").subtitle("Whether you are exploring a new partnership, looking for a specific solution, or simply want to learn more \u2014 our team is ready to help.").displayOrder(4).build(),
+
+                HeroSection.builder().pageKey("industries").eyebrow("Industries We Serve").title("Deep Expertise Across the Sectors That Matter Most").subtitle("We bring specialised knowledge, proven delivery frameworks, and dedicated domain teams to the industries driving global economic growth.").displayOrder(5).build(),
+
+                HeroSection.builder().pageKey("services").eyebrow("Our Services").title("End-to-End Solutions for Enterprise Transformation").subtitle("From front-office customer experience to back-office automation and analytics, we deliver services that create lasting value across your entire operation.").displayOrder(6).build(),
+
+                HeroSection.builder().pageKey("insights").eyebrow("Insights & Resources").title("Ideas, Research & Perspectives That Move Business Forward").subtitle("Explore our latest thinking on customer experience, intelligent automation, data analytics, and the trends shaping global enterprise operations.").displayOrder(7).build(),
+
+                HeroSection.builder().pageKey("mortgage_services").eyebrow("Mortgage Services").title("Specialised Financial Services for the Mortgage Industry").subtitle("End-to-end mortgage operations, technology, and analytics services \u2014 covering origination, servicing, title, fraud, compliance, and digital transformation across the entire mortgage lifecycle.").displayOrder(8).build(),
+
+                HeroSection.builder().pageKey("industry_detail").primaryButtonText("Speak with an Expert").primaryButtonUrl("/contact").secondaryButtonText("Request Consultation").secondaryButtonUrl("/contact?type=consultation").displayOrder(9).build(),
+
+                HeroSection.builder().pageKey("service_detail").primaryButtonText("Speak with an Expert").primaryButtonUrl("/contact").secondaryButtonText("Request Consultation").secondaryButtonUrl("/contact?type=consultation").displayOrder(10).build(),
+
+                HeroSection.builder().pageKey("mortgage_service_detail").primaryButtonText("Speak with an Expert").primaryButtonUrl("/contact").secondaryButtonText("Request Consultation").secondaryButtonUrl("/contact?type=consultation").displayOrder(11).build()
+        ));
+    }
+
+    private void seedCtaSections() {
+        if (ctaSectionRepository.count() > 0) return;
+        ctaSectionRepository.saveAll(List.of(
+
+                // 1. Home page main CTA
+                CtaSection.builder()
+                        .pageKey("home_main")
+                        .title("Ready to Transform Your Business?")
+                        .description("Talk to our experts and discover how Visionary Inspire can help you achieve your goals.")
+                        .primaryButtonText("Get in Touch")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("Explore Services")
+                        .secondaryButtonUrl("/services")
+                        .displayOrder(1).build(),
+
+                // 2. About page CTA
+                CtaSection.builder()
+                        .pageKey("about")
+                        .title("Partner With a Team That\u2019s Invested in Your Success")
+                        .description("Let\u2019s talk about how Visionary Inspire can help you achieve your transformation goals.")
+                        .primaryButtonText("Get in Touch")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("Explore Services")
+                        .secondaryButtonUrl("/services")
+                        .displayOrder(2).build(),
+
+                // 3. Careers page CTA
+                CtaSection.builder()
+                        .pageKey("careers")
+                        .title("Don\u2019t See the Right Role?")
+                        .description("Send us your CV and we\u2019ll reach out when a suitable position opens up.")
+                        .primaryButtonText("Get in Touch")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("About Us")
+                        .secondaryButtonUrl("/about")
+                        .displayOrder(3).build(),
+
+                // 4. Industries page CTA
+                CtaSection.builder()
+                        .pageKey("industries")
+                        .title("Ready to Explore What We Can Do in Your Industry?")
+                        .description("Our industry specialists are ready to discuss your specific challenges and opportunities.")
+                        .primaryButtonText("Get in Touch")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("View Our Services")
+                        .secondaryButtonUrl("/services")
+                        .displayOrder(4).build(),
+
+                // 5. Services page CTA
+                CtaSection.builder()
+                        .pageKey("services")
+                        .title("Not Sure Which Service Fits Your Needs?")
+                        .description("Our experts will help you identify the right solution for your business challenges.")
+                        .primaryButtonText("Speak to an Expert")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("Explore Industries")
+                        .secondaryButtonUrl("/industries")
+                        .displayOrder(5).build(),
+
+                // 6. Insights listing page CTA
+                CtaSection.builder()
+                        .pageKey("insights")
+                        .title("Want the Latest Insights Delivered to Your Inbox?")
+                        .description("Subscribe to our newsletter and stay ahead of the trends shaping your industry.")
+                        .primaryButtonText("Get in Touch")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("View All Services")
+                        .secondaryButtonUrl("/services")
+                        .displayOrder(6).build(),
+
+                // 7. Insight detail page CTA
+                CtaSection.builder()
+                        .pageKey("insight_detail")
+                        .title("Want More Insights Like This?")
+                        .description("Subscribe to our newsletter and get the latest research delivered to your inbox.")
+                        .primaryButtonText("Get in Touch")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("Browse All Insights")
+                        .secondaryButtonUrl("/insights")
+                        .displayOrder(7).build(),
+
+                // 8. Mortgage services listing page CTA
+                CtaSection.builder()
+                        .pageKey("mortgage_services")
+                        .title("Looking for a Mortgage Operations Partner?")
+                        .description("Our mortgage specialists are ready to discuss your specific challenges and operational requirements.")
+                        .primaryButtonText("Speak to an Expert")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("Explore Digital Operations")
+                        .secondaryButtonUrl("/services")
+                        .displayOrder(8).build(),
+
+                // 9. Contact page CTA
+                CtaSection.builder()
+                        .pageKey("contact")
+                        .title("Ready to Transform Your Business?")
+                        .description("Our experts are standing by to help you design the right solution for your challenges.")
+                        .primaryButtonText("Send a Message")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("Explore Services")
+                        .secondaryButtonUrl("/services")
+                        .displayOrder(9).build(),
+
+                // 10. Industry detail page CTA (dynamic — {name} replaced at render time)
+                CtaSection.builder()
+                        .pageKey("industry_detail")
+                        .title("Ready to Transform Your {name} Operations?")
+                        .description("Our industry specialists are ready to design a solution built around your sector\u2019s specific regulatory environment, competitive pressures, and operational requirements.")
+                        .primaryButtonText("Speak with an Expert")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("Request Consultation")
+                        .secondaryButtonUrl("/contact?type=consultation")
+                        .displayOrder(10).build(),
+
+                // 11. Service detail page CTA (dynamic — {name} replaced at render time)
+                CtaSection.builder()
+                        .pageKey("service_detail")
+                        .title("Ready to Transform Your {name} Operations?")
+                        .description("Our specialists are ready to design a solution tailored to your exact business requirements and commercial objectives.")
+                        .primaryButtonText("Speak with an Expert")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("Request Consultation")
+                        .secondaryButtonUrl("/contact?type=consultation")
+                        .displayOrder(11).build(),
+
+                // 12. Mortgage service detail page CTA (dynamic — {name} replaced at render time)
+                CtaSection.builder()
+                        .pageKey("mortgage_service_detail")
+                        .title("Ready to Transform Your {name} Operations?")
+                        .description("Our specialists are ready to design a solution tailored to your exact business requirements and commercial objectives.")
+                        .primaryButtonText("Speak with an Expert")
+                        .primaryButtonUrl("/contact")
+                        .secondaryButtonText("Request Consultation")
+                        .secondaryButtonUrl("/contact?type=consultation")
+                        .displayOrder(12).build()
+        ));
+    }
+
+    // ─── Navigation Links ─────────────────────────────────────────────────────
+
+    private void seedNavigationLinks() {
+        if (navigationLinkRepository.count() > 0) return;
+        navigationLinkRepository.saveAll(List.of(
+
+                // ── HEADER (desktop nav) ─────────────────────────────────────
+                NavigationLink.builder().section("HEADER").label("About").url("/about").displayOrder(1).build(),
+                NavigationLink.builder().section("HEADER").label("Services").url("").displayOrder(2).build(),
+                NavigationLink.builder().section("HEADER").label("Digital Operations").url("/services").displayOrder(3).build(),
+                NavigationLink.builder().section("HEADER").label("Industries").url("/industries").displayOrder(4).build(),
+                NavigationLink.builder().section("HEADER").label("Insights").url("/insights").displayOrder(5).build(),
+                NavigationLink.builder().section("HEADER").label("Careers").url("/careers").displayOrder(6).build(),
+                NavigationLink.builder().section("HEADER").label("Get in Touch").url("/contact").displayOrder(7).build(),
+
+                // ── INDUSTRIES_DROPDOWN ──────────────────────────────────────
+                NavigationLink.builder().section("INDUSTRIES_DROPDOWN").label("Banking & Financial Services").url("/industries/banking-financial-services").displayOrder(1).build(),
+                NavigationLink.builder().section("INDUSTRIES_DROPDOWN").label("Healthcare").url("/industries/healthcare").displayOrder(2).build(),
+                NavigationLink.builder().section("INDUSTRIES_DROPDOWN").label("Telecommunications").url("/industries/telecommunications").displayOrder(3).build(),
+                NavigationLink.builder().section("INDUSTRIES_DROPDOWN").label("Retail & E-commerce").url("/industries/retail-ecommerce").displayOrder(4).build(),
+                NavigationLink.builder().section("INDUSTRIES_DROPDOWN").label("Media & Entertainment").url("/industries/media-entertainment").displayOrder(5).build(),
+
+                // ── FOOTER_COMPANY ───────────────────────────────────────────
+                NavigationLink.builder().section("FOOTER_COMPANY").label("About Us").url("/about").displayOrder(1).build(),
+                NavigationLink.builder().section("FOOTER_COMPANY").label("Leadership").url("/about").displayOrder(2).build(),
+                NavigationLink.builder().section("FOOTER_COMPANY").label("Insights").url("/insights").displayOrder(3).build(),
+                NavigationLink.builder().section("FOOTER_COMPANY").label("Careers").url("/careers").displayOrder(4).build(),
+                NavigationLink.builder().section("FOOTER_COMPANY").label("Contact Us").url("/contact").displayOrder(5).build(),
+
+                // ── FOOTER_SERVICES ──────────────────────────────────────────
+                NavigationLink.builder().section("FOOTER_SERVICES").label("Application Services").url("/services/application-services").displayOrder(1).build(),
+                NavigationLink.builder().section("FOOTER_SERVICES").label("AI").url("/services/ai").displayOrder(2).build(),
+                NavigationLink.builder().section("FOOTER_SERVICES").label("Enterprise Automation").url("/services/enterprise-automation").displayOrder(3).build(),
+                NavigationLink.builder().section("FOOTER_SERVICES").label("Cyber Security").url("/services/cyber-security").displayOrder(4).build(),
+                NavigationLink.builder().section("FOOTER_SERVICES").label("Next-Gen Data").url("/services/next-gen-data").displayOrder(5).build(),
+
+                // ── FOOTER_INDUSTRIES ────────────────────────────────────────
+                NavigationLink.builder().section("FOOTER_INDUSTRIES").label("Banking & Financial Services").url("/industries/banking-financial-services").displayOrder(1).build(),
+                NavigationLink.builder().section("FOOTER_INDUSTRIES").label("Healthcare").url("/industries/healthcare").displayOrder(2).build(),
+                NavigationLink.builder().section("FOOTER_INDUSTRIES").label("Telecommunications").url("/industries/telecommunications").displayOrder(3).build(),
+                NavigationLink.builder().section("FOOTER_INDUSTRIES").label("Retail & E-commerce").url("/industries/retail-ecommerce").displayOrder(4).build(),
+                NavigationLink.builder().section("FOOTER_INDUSTRIES").label("Media & Entertainment").url("/industries/media-entertainment").displayOrder(5).build(),
+
+                // ── FOOTER_INSIGHTS ──────────────────────────────────────────
+                NavigationLink.builder().section("FOOTER_INSIGHTS").label("Blog & Articles").url("/insights").displayOrder(1).build(),
+                NavigationLink.builder().section("FOOTER_INSIGHTS").label("Case Studies").url("/insights").displayOrder(2).build(),
+                NavigationLink.builder().section("FOOTER_INSIGHTS").label("White Papers").url("/insights").displayOrder(3).build(),
+                NavigationLink.builder().section("FOOTER_INSIGHTS").label("Industry Reports").url("/insights").displayOrder(4).build(),
+                NavigationLink.builder().section("FOOTER_INSIGHTS").label("Webinars & Events").url("/insights").displayOrder(5).build(),
+
+                // ── SOCIAL_LINKS ─────────────────────────────────────────────
+                NavigationLink.builder().section("SOCIAL_LINKS").label("LinkedIn").url("#").displayOrder(1).build(),
+                NavigationLink.builder().section("SOCIAL_LINKS").label("Twitter").url("#").displayOrder(2).build(),
+                NavigationLink.builder().section("SOCIAL_LINKS").label("Facebook").url("#").displayOrder(3).build(),
+                NavigationLink.builder().section("SOCIAL_LINKS").label("YouTube").url("#").displayOrder(4).build(),
+
+                // ── FOOTER_LEGAL ─────────────────────────────────────────────
+                NavigationLink.builder().section("FOOTER_LEGAL").label("Privacy Policy").url("#").displayOrder(1).build(),
+                NavigationLink.builder().section("FOOTER_LEGAL").label("Terms of Use").url("#").displayOrder(2).build(),
+                NavigationLink.builder().section("FOOTER_LEGAL").label("Cookie Policy").url("#").displayOrder(3).build(),
+                NavigationLink.builder().section("FOOTER_LEGAL").label("Accessibility").url("#").displayOrder(4).build(),
+                NavigationLink.builder().section("FOOTER_LEGAL").label("Sitemap").url("#").displayOrder(5).build()
         ));
     }
 }
