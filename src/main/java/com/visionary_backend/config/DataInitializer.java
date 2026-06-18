@@ -5,6 +5,7 @@ import com.visionary_backend.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -83,7 +84,7 @@ public class DataInitializer implements CommandLineRunner {
     // ─── Stats ────────────────────────────────────────────────────────────────
 
     private void seedStats() {
-        statRepository.deleteAll();
+        if (statRepository.count() > 0) return;
 
         // ── context: home (home page stats strip) ────────────────────────────
         statRepository.saveAll(List.of(
@@ -221,9 +222,13 @@ public class DataInitializer implements CommandLineRunner {
 
     // ─── Services ─────────────────────────────────────────────────────────────
 
-    private void seedServices() {
-        long count = serviceRepository.count();
-        if (count == 27) return;
+    @Transactional
+    void seedServices() {
+        if (serviceRepository.findBySlug("nextops-business-process-services")
+                .map(s -> "Operations & BPO".equals(s.getCategory()))
+                .orElse(false)) {
+            return;
+        }
         serviceRepository.deleteAll();
 
         // ═══════════════════════════════════════════════════════════════════
@@ -250,7 +255,7 @@ public class DataInitializer implements CommandLineRunner {
                 .slug("nextops-business-process-services").title("NextOps – Business Process Services")
                 .description("NextOps is our next-generation business process services model that combines intelligent automation, AI-assisted decisioning, and analytics-driven continuous improvement to deliver operations that are faster, cheaper, and more accurate than traditional BPO. We reimagine core enterprise processes rather than simply lift-and-shift them offshore.")
                 .iconUrl("/images/services/nextops.svg").bannerUrl("/images/services/nextops-banner.jpg")
-                .category("Application Services").displayOrder(3).build();
+                .category("Operations & BPO").displayOrder(3).build();
         s03.getBenefits().addAll(List.of(
                 ServiceBenefit.builder().title("Intelligent Process Automation").description("RPA, AI, and decision engines working in concert to eliminate manual effort from high-volume transactional processes.").service(s03).build(),
                 ServiceBenefit.builder().title("Analytics-Led Improvement").description("Real-time process mining and performance dashboards that continuously surface optimisation opportunities.").service(s03).build(),
@@ -264,7 +269,7 @@ public class DataInitializer implements CommandLineRunner {
                 .slug("cognitive").title("Cognitive")
                 .description("We deploy cognitive computing capabilities — including natural language processing, machine vision, and knowledge graph technologies — to automate complex judgement-intensive tasks that previously required human expertise. Our cognitive solutions learn continuously, improving accuracy with every interaction and unlocking new levels of enterprise productivity.")
                 .iconUrl("/images/services/cognitive.svg").bannerUrl("/images/services/cognitive-banner.jpg")
-                .category("Application Services").displayOrder(4).build();
+                .category("AI & Automation").displayOrder(4).build();
         s04.getBenefits().addAll(List.of(
                 ServiceBenefit.builder().title("Intelligent Document Processing").description("Cognitive extraction and classification of unstructured documents with human-level accuracy at enterprise scale.").service(s04).build(),
                 ServiceBenefit.builder().title("Natural Language Understanding").description("Deep NLP pipelines for sentiment analysis, intent recognition, and entity extraction across customer and operational data.").service(s04).build(),
@@ -278,7 +283,7 @@ public class DataInitializer implements CommandLineRunner {
                 .slug("cyber-security").title("Cyber Security")
                 .description("We protect enterprise digital estates through a comprehensive suite of cybersecurity services — spanning threat detection and response, identity management, vulnerability governance, and regulatory compliance. Our security professionals operate as an extension of your team, building a proactive, resilient security posture that keeps pace with an evolving threat landscape.")
                 .iconUrl("/images/services/cyber-security.svg").bannerUrl("/images/services/cyber-security-banner.jpg")
-                .category("Application Services").displayOrder(5).build();
+                .category("Governance & Infrastructure").displayOrder(5).build();
         s05.getBenefits().addAll(List.of(
                 ServiceBenefit.builder().title("24/7 Security Operations").description("Round-the-clock threat monitoring, detection, and incident response powered by SIEM and SOAR platforms.").service(s05).build(),
                 ServiceBenefit.builder().title("Zero-Trust Identity Management").description("MFA, PAM, and lifecycle governance frameworks that eliminate credential-based attack vectors.").service(s05).build(),
@@ -292,7 +297,7 @@ public class DataInitializer implements CommandLineRunner {
                 .slug("it-value-stream-acceleration-devops").title("IT Value Stream Acceleration – DevOps Services")
                 .description("We help enterprises eliminate waste across their IT value stream by embedding DevOps principles, lean engineering practices, and flow-based delivery models that dramatically reduce lead times from idea to production. Our value stream acceleration engagements combine VSM analysis, toolchain modernisation, and cultural transformation to make software delivery a competitive differentiator.")
                 .iconUrl("/images/services/devops-vsa.svg").bannerUrl("/images/services/devops-vsa-banner.jpg")
-                .category("Application Services").displayOrder(6).build();
+                .category("Cloud & Digital").displayOrder(6).build();
         s06.getBenefits().addAll(List.of(
                 ServiceBenefit.builder().title("Value Stream Mapping").description("Structured analysis that identifies bottlenecks, handoff delays, and waste across the entire software delivery pipeline.").service(s06).build(),
                 ServiceBenefit.builder().title("CI/CD Pipeline Modernisation").description("Automated build, test, and deployment pipelines that enforce quality gates and cut release cycle times by up to 70%.").service(s06).build(),
@@ -306,7 +311,7 @@ public class DataInitializer implements CommandLineRunner {
                 .slug("devops-automation-services").title("DevOps Automation Services")
                 .description("We design and implement the automation fabric that makes modern DevOps possible — from infrastructure provisioning and configuration management to release orchestration and policy-as-code enforcement. Our DevOps automation practice eliminates manual gates, reduces human error, and ensures every environment is consistent, auditable, and deployable on demand.")
                 .iconUrl("/images/services/devops-auto.svg").bannerUrl("/images/services/devops-auto-banner.jpg")
-                .category("Application Services").displayOrder(7).build();
+                .category("Cloud & Digital").displayOrder(7).build();
         s07.getBenefits().addAll(List.of(
                 ServiceBenefit.builder().title("Infrastructure as Code").description("Terraform, Ansible, and Pulumi-based automation ensuring consistent, version-controlled environment provisioning.").service(s07).build(),
                 ServiceBenefit.builder().title("Release Orchestration").description("End-to-end release pipelines with automated approvals, rollback triggers, and blue-green deployment strategies.").service(s07).build(),
@@ -349,7 +354,7 @@ public class DataInitializer implements CommandLineRunner {
                 .slug("experience-design").title("Experience Design")
                 .description("We design human-centred digital experiences that delight users, drive adoption, and deliver measurable business outcomes. Our experience design practice integrates UX research, service design, and product design into every stage of the development lifecycle — ensuring that technology investments translate into experiences people actually want to use.")
                 .iconUrl("/images/services/experience-design.svg").bannerUrl("/images/services/experience-design-banner.jpg")
-                .category("AI & Automation").displayOrder(10).build();
+                .category("Application Services").displayOrder(10).build();
         s10.getBenefits().addAll(List.of(
                 ServiceBenefit.builder().title("UX Research & Insight").description("User interviews, usability testing, and behavioural analytics that ground every design decision in real user evidence.").service(s10).build(),
                 ServiceBenefit.builder().title("Service Design").description("End-to-end service blueprinting that aligns front-stage experiences with back-office operations and technology.").service(s10).build(),
@@ -956,15 +961,7 @@ public class DataInitializer implements CommandLineRunner {
     // ─── Office Locations ─────────────────────────────────────────────────────
 
     private void seedOfficeLocations() {
-        officeLocationRepository.deleteAll();
-        officeLocationRepository.saveAll(List.of(
-                OfficeLocation.builder().city("Chennai").country("India")
-                        .address("Level 8, Olympia Technology Park, Guindy, Chennai 600 032").phone("+91 44 4000 7000").email("india@visionaryinspire.com").build(),
-                OfficeLocation.builder().city("Hyderabad").country("India")
-                        .address("Hyderabad, India").phone("+91 40 4000 7000").email("hyderabad@visionaryinspire.com").build(),
-                OfficeLocation.builder().city("Bangalore").country("India")
-                        .address("3rd Floor, Embassy TechVillage, Outer Ring Road, Bangalore 560 103").phone("+91 80 6700 4000").email("bangalore@visionaryinspire.com").build()
-        ));
+        // Intentionally empty. Office locations are managed directly in the database.
     }
 
     // ─── CTA Sections ─────────────────────────────────────────────────────────
