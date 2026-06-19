@@ -4,6 +4,8 @@ import com.visionary_backend.entity.Job;
 import com.visionary_backend.entity.JobApplication;
 import com.visionary_backend.repository.JobApplicationRepository;
 import com.visionary_backend.repository.JobRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +21,7 @@ import java.util.UUID;
 @Service
 public class JobApplicationService {
 
+    private static final Logger log = LoggerFactory.getLogger(JobApplicationService.class);
     private final JobApplicationRepository applicationRepository;
     private final JobRepository jobRepository;
     private final EmailService emailService;
@@ -71,6 +74,9 @@ public class JobApplicationService {
                 .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"));
 
         // Notification to admin (with resume attachment)
+        Path absoluteDest = dest.toAbsolutePath();
+        log.debug("[JobApplication] Resume saved at : {}", absoluteDest);
+        log.debug("[JobApplication] Resume exists   : {}", Files.exists(absoluteDest));
         emailService.sendWithAttachment(
             notificationEmail,
             "New Job Application Received - " + jobTitle,
@@ -83,7 +89,7 @@ public class JobApplicationService {
             "Experience        : " + experience + "\n" +
             (linkedinUrl != null && !linkedinUrl.isBlank() ? "LinkedIn          : " + linkedinUrl + "\n" : "") +
             "Application Date  : " + applicationDate,
-            dest
+            absoluteDest
         );
 
         // Acknowledgement to applicant

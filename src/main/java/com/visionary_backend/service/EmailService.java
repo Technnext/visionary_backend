@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,21 +37,49 @@ public class EmailService {
             log.warn("Resend API key not configured — skipping email to {}", to);
             return;
         }
-        try {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("from", FROM);
-            payload.put("to", List.of(to));
-            payload.put("subject", subject);
-            payload.put("text", body);
 
-            if (attachmentPath != null && Files.exists(attachmentPath)) {
-                byte[] fileBytes = Files.readAllBytes(attachmentPath);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("from", FROM);
+        payload.put("to", List.of(to));
+        payload.put("subject", subject);
+        payload.put("text", body);
+
+        // Resolve to absolute path so Files.exists() is reliable regardless of working directory
+        Path resolvedPath = (attachmentPath != null) ? attachmentPath.toAbsolutePath() : null;
+
+        log.debug("[Attachment] Provided path  : {}", attachmentPath);
+        log.debug("[Attachment] Absolute path  : {}", resolvedPath);
+
+        if (resolvedPath != null && Files.exists(resolvedPath)) {
+            try {
+                long fileSize = Files.size(resolvedPath);
+                log.debug("[Attachment] File exists    : true");
+                log.debug("[Attachment] File size      : {} bytes", fileSize);
+
+                byte[] fileBytes = Files.readAllBytes(resolvedPath);
                 String encoded = Base64.getEncoder().encodeToString(fileBytes);
-                payload.put("attachments", List.of(
-                    Map.of("filename", attachmentPath.getFileName().toString(), "content", encoded)
-                ));
-            }
 
+                // Restore original filename: strip the UUID prefix (uuid_originalname.ext)
+                String storedName = resolvedPath.getFileName().toString();
+                int underscoreIdx = storedName.indexOf('_');
+                String originalFilename = (underscoreIdx != -1 && underscoreIdx < storedName.length() - 1)
+                        ? storedName.substring(underscoreIdx + 1)
+                        : storedName;
+
+                log.debug("[Attachment] Filename sent  : {}", originalFilename);
+                log.debug("[Attachment] Base64 length  : {} chars", encoded.length());
+
+                payload.put("attachments", List.of(
+                    Map.of("filename", originalFilename, "content", encoded)
+                ));
+            } catch (IOException e) {
+                log.error("[Attachment] Failed to read file at {} — sending without attachment", resolvedPath, e);
+            }
+        } else {
+            log.warn("[Attachment] File exists    : false — path={} — sending without attachment", resolvedPath);
+        }
+
+        try {
             restClient.post()
                 .uri(RESEND_API_URL)
                 .header("Authorization", "Bearer " + apiKey)
@@ -58,12 +87,13 @@ public class EmailService {
                 .body(payload)
                 .retrieve()
                 .toBodilessEntity();
-            log.debug("Email with attachment sent via Resend to {}", to);
-        } catch (IOException e) {
-            log.error("Failed to read attachment for email to {}: {}", to, e.getMessage());
-            send(to, subject, body);
+            boolean hasAttachment = payload.containsKey("attachments");
+            log.debug("[Resend] Email accepted — to={} subject=\"{}\" attachment={}", to, subject, hasAttachment);
+        } catch (RestClientResponseException e) {
+            log.error("[Resend] API rejected request — status={} body={}",
+                e.getStatusCode(), e.getResponseBodyAsString(), e);
         } catch (Exception e) {
-            log.error("Failed to send email with attachment via Resend to {}: {}", to, e.getMessage());
+            log.error("[Resend] Failed to send email to={} subject=\"{}\"", to, subject, e);
         }
     }
 
