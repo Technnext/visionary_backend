@@ -4,10 +4,7 @@ import com.visionary_backend.entity.Job;
 import com.visionary_backend.entity.JobApplication;
 import com.visionary_backend.repository.JobApplicationRepository;
 import com.visionary_backend.repository.JobRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Service
@@ -23,9 +21,7 @@ public class JobApplicationService {
 
     private final JobApplicationRepository applicationRepository;
     private final JobRepository jobRepository;
-
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
+    private final EmailService emailService;
 
     @Value("${app.upload.dir:uploads/resumes}")
     private String uploadDir;
@@ -34,9 +30,11 @@ public class JobApplicationService {
     private String notificationEmail;
 
     public JobApplicationService(JobApplicationRepository applicationRepository,
-                                 JobRepository jobRepository) {
+                                 JobRepository jobRepository,
+                                 EmailService emailService) {
         this.applicationRepository = applicationRepository;
         this.jobRepository = jobRepository;
+        this.emailService = emailService;
     }
 
     public JobApplication apply(Long jobId, String fullName, String email,
@@ -48,14 +46,12 @@ public class JobApplicationService {
                 .map(Job::getTitle)
                 .orElse("Unknown Position");
 
-        // Persist resume file
         Path dir = Paths.get(uploadDir);
         Files.createDirectories(dir);
         String filename = UUID.randomUUID() + "_" + resume.getOriginalFilename();
         Path dest = dir.resolve(filename);
         Files.copy(resume.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
 
-        // Save application record
         JobApplication app = JobApplication.builder()
                 .jobId(jobId)
                 .fullName(fullName)
@@ -71,28 +67,34 @@ public class JobApplicationService {
 
         applicationRepository.save(app);
 
-        // Send notification — skipped if mail not configured
-        try {
-            if (mailSender != null) {
-            SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setTo(notificationEmail);
-            msg.setSubject("New Job Application: " + jobTitle);
-            msg.setText(
-                "New application received.\n\n" +
-                "Candidate : " + fullName + "\n" +
-                "Job Title  : " + jobTitle + "\n" +
-                "Email      : " + email + "\n" +
-                "Phone      : " + phone + "\n" +
-                "Location   : " + location + "\n" +
-                "Experience : " + experience + "\n" +
-                (linkedinUrl != null && !linkedinUrl.isBlank() ? "LinkedIn   : " + linkedinUrl + "\n" : "") +
-                "Resume     : " + filename
-            );
-                mailSender.send(msg);
-            }
-        } catch (Exception ignored) {
-            // Swallow — email misconfiguration should not affect applicant
-        }
+        String applicationDate = app.getCreatedAt()
+                .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"));
+
+        // Notification to admin
+        emailService.send(
+            notificationEmail,
+            "New Job Application Received - " + jobTitle,
+            "A new job application has been submitted.\n\n" +
+            "Name              : " + fullName + "\n" +
+            "Email             : " + email + "\n" +
+            "Phone             : " + phone + "\n" +
+            "Position          : " + jobTitle + "\n" +
+            "Location          : " + location + "\n" +
+            "Experience        : " + experience + "\n" +
+            (linkedinUrl != null && !linkedinUrl.isBlank() ? "LinkedIn          : " + linkedinUrl + "\n" : "") +
+            "Application Date  : " + applicationDate
+        );
+
+        // Acknowledgement to applicant
+        emailService.send(
+            email,
+            "Thank you for applying to Visionary Inspire",
+            "Dear " + fullName + ",\n\n" +
+            "Thank you for applying for the " + jobTitle + " position at Visionary Inspire.\n\n" +
+            "We have received your application and will review it shortly. " +
+            "If your profile matches our requirements, we will be in touch.\n\n" +
+            "Best regards,\nVisionary Inspire Team"
+        );
 
         return app;
     }

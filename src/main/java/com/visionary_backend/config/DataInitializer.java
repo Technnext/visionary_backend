@@ -833,7 +833,15 @@ public class DataInitializer implements CommandLineRunner {
     // ─── Jobs ─────────────────────────────────────────────────────────────────
 
     private void seedJobs() {
-        if (jobRepository.count() > 0) return;
+        // Reassign jobs with old mortgage department names to "US Mortgage"
+        List.of("Closing", "Funding", "Loan Setup").forEach(dept -> {
+            List<Job> toUpdate = jobRepository.findByDepartmentAndActiveTrue(dept);
+            toUpdate.forEach(j -> j.setDepartment("US Mortgage"));
+            jobRepository.saveAll(toUpdate);
+        });
+
+        if (jobRepository.count() > 0 && jobRepository.findAll().stream().anyMatch(j -> "US Mortgage".equals(j.getDepartment()))) return;
+        if (jobRepository.count() == 0) {
         jobRepository.saveAll(List.of(
                 Job.builder().title("Senior Customer Service Associate").department("Customer Experience").location("Chennai, India").type("Full-Time")
                         .description("Handle inbound and outbound interactions for a global banking client across voice and chat channels. Drive first-call resolution and CSAT targets.").postedDate(LocalDateTime.of(2025, 5, 1, 9, 0)).active(true).build(),
@@ -860,6 +868,19 @@ public class DataInitializer implements CommandLineRunner {
                 Job.builder().title("HR Business Partner").department("Human Resources").location("Hyderabad, India").type("Full-Time")
                         .description("Partner with delivery leaders to drive talent management, engagement, and performance programmes across a 2,000-strong operations centre.").postedDate(LocalDateTime.of(2025, 1, 20, 9, 0)).active(true).build()
         ));
+        }
+        // Ensure all four US Mortgage jobs exist (idempotent by title)
+        List<String> existingTitles = jobRepository.findAll().stream().map(j -> j.getTitle()).toList();
+        List<Job> mortgageJobs = new java.util.ArrayList<>();
+        if (!existingTitles.contains("Closing Sr. Analyst"))
+            mortgageJobs.add(Job.builder().title("Closing Sr. Analyst").department("US Mortgage").location("Bangalore, India").type("Full-Time").description("Review and clear closing conditions on residential mortgage loan files, coordinate with title companies and escrow agents, and ensure all closing documents meet investor and regulatory requirements.").postedDate(LocalDateTime.of(2025, 6, 1, 9, 0)).active(true).build());
+        if (!existingTitles.contains("Post-closing Analyst"))
+            mortgageJobs.add(Job.builder().title("Post-closing Analyst").department("US Mortgage").location("Bangalore, India").type("Full-Time").description("Manage post-closing activities including document review, trailing document follow-up, recording confirmation, and investor package delivery to ensure loan files are complete and investor-ready.").postedDate(LocalDateTime.of(2025, 6, 1, 9, 0)).active(true).build());
+        if (!existingTitles.contains("Loansetup - Analyst"))
+            mortgageJobs.add(Job.builder().title("Loansetup - Analyst").department("US Mortgage").location("Bangalore, India").type("Full-Time").description("Set up new mortgage loan files in the loan origination system, verify data integrity, order required third-party services, and ensure all initial disclosures are issued within regulatory timeframes.").postedDate(LocalDateTime.of(2025, 6, 1, 9, 0)).active(true).build());
+        if (!existingTitles.contains("Funding - Sr. Analyst"))
+            mortgageJobs.add(Job.builder().title("Funding - Sr. Analyst").department("US Mortgage").location("Bangalore, India").type("Full-Time").description("Coordinate mortgage loan funding activities, review final closing packages, verify wire instructions, confirm title company receipt, and ensure all conditions are cleared prior to fund disbursement.").postedDate(LocalDateTime.of(2025, 6, 1, 9, 0)).active(true).build());
+        if (!mortgageJobs.isEmpty()) jobRepository.saveAll(mortgageJobs);
     }
 
     // ─── Leaders ──────────────────────────────────────────────────────────────
