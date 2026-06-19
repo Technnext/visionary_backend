@@ -7,6 +7,11 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +29,42 @@ public class EmailService {
 
     public EmailService() {
         this.restClient = RestClient.create();
+    }
+
+    public void sendWithAttachment(String to, String subject, String body, Path attachmentPath) {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.warn("Resend API key not configured — skipping email to {}", to);
+            return;
+        }
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("from", FROM);
+            payload.put("to", List.of(to));
+            payload.put("subject", subject);
+            payload.put("text", body);
+
+            if (attachmentPath != null && Files.exists(attachmentPath)) {
+                byte[] fileBytes = Files.readAllBytes(attachmentPath);
+                String encoded = Base64.getEncoder().encodeToString(fileBytes);
+                payload.put("attachments", List.of(
+                    Map.of("filename", attachmentPath.getFileName().toString(), "content", encoded)
+                ));
+            }
+
+            restClient.post()
+                .uri(RESEND_API_URL)
+                .header("Authorization", "Bearer " + apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(payload)
+                .retrieve()
+                .toBodilessEntity();
+            log.debug("Email with attachment sent via Resend to {}", to);
+        } catch (IOException e) {
+            log.error("Failed to read attachment for email to {}: {}", to, e.getMessage());
+            send(to, subject, body);
+        } catch (Exception e) {
+            log.error("Failed to send email with attachment via Resend to {}: {}", to, e.getMessage());
+        }
     }
 
     public void send(String to, String subject, String body) {

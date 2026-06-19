@@ -70,8 +70,8 @@ public class JobApplicationService {
         String applicationDate = app.getCreatedAt()
                 .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"));
 
-        // Notification to admin
-        emailService.send(
+        // Notification to admin (with resume attachment)
+        emailService.sendWithAttachment(
             notificationEmail,
             "New Job Application Received - " + jobTitle,
             "A new job application has been submitted.\n\n" +
@@ -82,7 +82,8 @@ public class JobApplicationService {
             "Location          : " + location + "\n" +
             "Experience        : " + experience + "\n" +
             (linkedinUrl != null && !linkedinUrl.isBlank() ? "LinkedIn          : " + linkedinUrl + "\n" : "") +
-            "Application Date  : " + applicationDate
+            "Application Date  : " + applicationDate,
+            dest
         );
 
         // Acknowledgement to applicant
